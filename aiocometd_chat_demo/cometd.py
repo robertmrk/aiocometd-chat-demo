@@ -1,5 +1,5 @@
 """Synchronous CometD client"""
-from enum import Enum, unique, auto
+from enum import IntEnum, unique, auto
 import asyncio
 from functools import partial
 from typing import Optional, Iterable, TypeVar, Awaitable, Callable, Any
@@ -9,7 +9,7 @@ from contextlib import suppress
 import aiocometd
 from aiocometd.typing import JsonObject
 # pylint: disable=no-name-in-module
-from PyQt5.QtCore import pyqtSignal, QObject  # type: ignore
+from PyQt5.QtCore import pyqtSignal, pyqtProperty, QObject  # type: ignore
 # pylint: enable=no-name-in-module
 
 from aiocometd_chat_demo.exceptions import InvalidStateError
@@ -41,7 +41,7 @@ def run_coro(coro: Awaitable[T_co],
 
 
 @unique
-class ClientState(Enum):
+class ClientState(IntEnum):
     """CometD client states"""
     #: Connected with the server
     CONNECTED = auto()
@@ -62,7 +62,10 @@ class MessageResponse(QObject):  # type: ignore
     #: Emited when the response has been received
     finished = pyqtSignal()
 
+# pylint: enable=too-few-public-methods
 
+
+# pylint: disable=too-many-instance-attributes
 class CometdClient(QObject):  # type: ignore
     """Synchronous CometD client implementation
 
@@ -76,6 +79,19 @@ class CometdClient(QObject):  # type: ignore
     potential errors during the asynchronous operation are broadcasted with
     signals.
     """
+    #: Signal emited when the client's state is changed
+    state_changed = pyqtSignal(ClientState)
+    #: Signal emited when the client enters the :obj:`~ClientState.CONNECTED`
+    #: state
+    connected = pyqtSignal()
+    #: Signal emited when the client enters the
+    #: :obj:`~ClientState.DISCONNECTED` state
+    disconnected = pyqtSignal()
+    #: Signal emited when the client enters the :obj:`~ClientState.ERROR` state
+    error = pyqtSignal(Exception)
+    #: Signal emited when a message has been received from the server
+    message_received = pyqtSignal(dict)
+
     def __init__(self, url: str, subscriptions: Iterable[str],
                  loop: Optional[asyncio.AbstractEventLoop] = None) -> None:
         """
@@ -92,13 +108,29 @@ class CometdClient(QObject):  # type: ignore
         self._subscriptions = list(subscriptions)
         self._loop = loop or asyncio.get_event_loop()
         self._client: Optional[aiocometd.Client] = None
-        #: Current state of the client
-        self.state = ClientState.DISCONNECTED
+        self._state = ClientState.DISCONNECTED
         self._state_signals = {
             ClientState.CONNECTED: self.connected,
             ClientState.DISCONNECTED: self.disconnected,
         }
         self._connect_task: Optional["futures.Future[None]"] = None
+
+    @pyqtProperty(ClientState, notify=state_changed)
+    def state(self) -> ClientState:
+        """Current state of the client"""
+        return self._state
+
+    @state.setter  # type: ignore
+    def state(self, new_state: ClientState) -> None:
+        """Set the state of the client to *state*"""
+        # if the state didn't changed then don't do anything
+        if new_state != self._state:
+            self._state = new_state
+            # notify listeners that the state changed
+            self.state_changed.emit(self._state)
+            # emit state specific signals
+            if new_state in self._state_signals:
+                self._state_signals[new_state].emit()
 
     def connect_(self) -> None:
         """Connect to the CometD service and start listening for messages
@@ -130,8 +162,7 @@ class CometdClient(QObject):  # type: ignore
                 await client.subscribe(subscription)
 
             # put the client into a connected state
-            self._loop.call_soon_threadsafe(self._set_state,
-                                            ClientState.CONNECTED)
+            self.state = ClientState.CONNECTED
             # listen for incoming messages
 
             with suppress(futures.CancelledError):
@@ -143,8 +174,7 @@ class CometdClient(QObject):  # type: ignore
         # clear the asynchronous client attribute
         self._client = None
         # put the client into a disconnected state
-        self._loop.call_soon_threadsafe(self._set_state,
-                                        ClientState.DISCONNECTED)
+        self.state = ClientState.DISCONNECTED
 
     def _on_connect_done(self, future: "futures.Future[None]") -> None:
         """Evaluate the result of an asynchronous task
@@ -158,7 +188,7 @@ class CometdClient(QObject):  # type: ignore
         with suppress(futures.CancelledError):
             error = future.exception()
         if error is not None:
-            self._set_state(ClientState.ERROR)
+            self.state = ClientState.ERROR
             self.error.emit(error)
 
     def disconnect_(self) -> None:
@@ -180,7 +210,7 @@ class CometdClient(QObject):  # type: ignore
         :param data: Data to send to the server
         :return: Return the response associated with the message
         """
-        # chech that the client has been initialized
+        # check that the client has been initialized
         if self.state != ClientState.CONNECTED:
             raise InvalidStateError("Can't send messages in a non-connected "
                                     "state.")
@@ -209,28 +239,4 @@ class CometdClient(QObject):  # type: ignore
         # notify listeners that a response has been received
         response.finished.emit()
 
-    def _set_state(self, state: ClientState) -> None:
-        """Set the state of the client to *state*"""
-        # if the state didn't changed then don't do anything
-        if state != self.state:
-            self.state = state
-            # notify listeners that the state changed
-            self.state_changed.emit(self.state)
-            # emit state specific signals
-            if state in self._state_signals:
-                self._state_signals[state].emit()
-
-    # Signal emited when the client's state is changed
-    state_changed = pyqtSignal(ClientState)
-    # Signal emited when the client enters the :obj:`~ClientState.CONNECTED`
-    # state
-    connected = pyqtSignal()
-    # Signal emited when the client enters the :obj:`~ClientState.DISCONNECTED`
-    # state
-    disconnected = pyqtSignal()
-    # Signal emited when the client enters the :obj:`~ClientState.ERROR` state
-    error = pyqtSignal(Exception)
-    # Signal emited when a message has been received from the server
-    message_received = pyqtSignal(dict)
-
-# pylint: enable=too-few-public-methods
+# pylint: disable=too-many-instance-attributes

@@ -23,7 +23,7 @@ class TestCometdClient(TestCase):
         self.assertEqual(self.client._url, self.url)
         self.assertEqual(self.client._subscriptions, self.subscriptions)
         self.assertEqual(self.client._loop, self.loop)
-        self.assertEqual(self.client.state, ClientState.DISCONNECTED)
+        self.assertEqual(self.client._state, ClientState.DISCONNECTED)
 
     @mock.patch("aiocometd_chat_demo.cometd.run_coro")
     def test_connect(self, run_coro):
@@ -37,7 +37,7 @@ class TestCometdClient(TestCase):
 
     @mock.patch("aiocometd_chat_demo.cometd.run_coro")
     def test_connect_do_nothing_if_connected(self, run_coro):
-        self.client.state = ClientState.CONNECTED
+        self.client._state = ClientState.CONNECTED
         self.client._connect = mock.MagicMock()
 
         self.client.connect_()
@@ -46,7 +46,7 @@ class TestCometdClient(TestCase):
 
     def test_disconnect(self):
         self.client._connect_task = mock.MagicMock()
-        self.client.state = ClientState.CONNECTED
+        self.client._state = ClientState.CONNECTED
 
         self.client.disconnect_()
 
@@ -54,7 +54,7 @@ class TestCometdClient(TestCase):
 
     def test_disconnect_does_nothing_if_disconnected(self):
         self.client._connect_task = mock.MagicMock()
-        self.client.state = ClientState.DISCONNECTED
+        self.client._state = ClientState.DISCONNECTED
 
         self.client.disconnect_()
 
@@ -62,7 +62,7 @@ class TestCometdClient(TestCase):
 
     def test_disconnect_does_nothing_in_error_state(self):
         self.client._connect_task = mock.MagicMock()
-        self.client.state = ClientState.ERROR
+        self.client._state = ClientState.ERROR
 
         self.client.disconnect_()
 
@@ -70,7 +70,7 @@ class TestCometdClient(TestCase):
 
     def test_disconnect_error_on_no_task(self):
         self.client._connect_task = None
-        self.client.state = ClientState.CONNECTED
+        self.client._state = ClientState.CONNECTED
 
         with self.assertRaisesRegex(InvalidStateError,
                                     "Uninitialized _connect_task attribute."):
@@ -97,11 +97,10 @@ class TestCometdClient(TestCase):
             mock.call(channel) for channel in self.subscriptions
         ])
         loop.call_soon_threadsafe.assert_has_calls([
-            mock.call(cometd_client._set_state, ClientState.CONNECTED),
             mock.call(cometd_client.message_received.emit, messages[0]),
-            mock.call(cometd_client.message_received.emit, messages[1]),
-            mock.call(cometd_client._set_state, ClientState.DISCONNECTED)
+            mock.call(cometd_client.message_received.emit, messages[1])
         ])
+        self.assertEqual(cometd_client.state, ClientState.DISCONNECTED)
 
     @mock.patch("aiocometd_chat_demo.cometd.aiocometd.Client")
     async def test__connect_retruns_if_cancelled(self, client_cls):
@@ -124,10 +123,7 @@ class TestCometdClient(TestCase):
         client.subscribe.assert_has_calls([
             mock.call(channel) for channel in self.subscriptions
         ])
-        loop.call_soon_threadsafe.assert_has_calls([
-            mock.call(cometd_client._set_state, ClientState.CONNECTED),
-            mock.call(cometd_client._set_state, ClientState.DISCONNECTED)
-        ])
+        self.assertEqual(cometd_client.state, ClientState.DISCONNECTED)
 
     def test_on_connect_done_does_nothing_on_normal_return(self):
         future = mock.MagicMock()
@@ -159,7 +155,7 @@ class TestCometdClient(TestCase):
 
         self.client._on_connect_done(future)
 
-        self.client._set_state.assert_called_with(ClientState.ERROR)
+        self.assertEqual(self.client.state, ClientState.ERROR)
         self.client.error.emit.assert_called_with(
             future.exception.return_value
         )
@@ -170,7 +166,7 @@ class TestCometdClient(TestCase):
         channel = "channel"
         message = object()
         self.client._client = mock.MagicMock()
-        self.client.state = ClientState.CONNECTED
+        self.client._state = ClientState.CONNECTED
 
         response = self.client.publish(channel, message)
 
@@ -195,7 +191,7 @@ class TestCometdClient(TestCase):
     def test_publish_error_if_client_not_initialized(self):
         channel = "channel"
         message = object()
-        self.client.state = ClientState.CONNECTED
+        self.client._state = ClientState.CONNECTED
 
         with self.assertRaisesRegex(InvalidStateError,
                                     "Uninitialized _client attribute."):
@@ -227,10 +223,10 @@ class TestCometdClient(TestCase):
 
     def test_set_state_connected(self):
         self.client._state_signals[ClientState.CONNECTED] = mock.MagicMock()
-        self.client.state = ClientState.DISCONNECTED
+        self.client._state = ClientState.DISCONNECTED
         self.client.state_changed = mock.MagicMock()
 
-        self.client._set_state(ClientState.CONNECTED)
+        self.client.state = ClientState.CONNECTED
 
         self.client.state_changed.emit.assert_called_with(
             ClientState.CONNECTED
@@ -239,10 +235,10 @@ class TestCometdClient(TestCase):
 
     def test_set_state_disconnected(self):
         self.client._state_signals[ClientState.DISCONNECTED] = mock.MagicMock()
-        self.client.state = ClientState.CONNECTED
+        self.client._state = ClientState.CONNECTED
         self.client.state_changed = mock.MagicMock()
 
-        self.client._set_state(ClientState.DISCONNECTED)
+        self.client.state = ClientState.DISCONNECTED
 
         self.client.state_changed.emit.assert_called_with(
             ClientState.DISCONNECTED
@@ -252,10 +248,10 @@ class TestCometdClient(TestCase):
 
     def test_set_state_no_state_change(self):
         self.client._state_signals[ClientState.DISCONNECTED] = mock.MagicMock()
-        self.client.state = ClientState.DISCONNECTED
+        self.client._state = ClientState.DISCONNECTED
         self.client.state_changed = mock.MagicMock()
 
-        self.client._set_state(ClientState.DISCONNECTED)
+        self.client.state = ClientState.DISCONNECTED
 
         self.client.state_changed.emit.assert_not_called()
         self.client._state_signals[ClientState.DISCONNECTED].emit\
@@ -263,10 +259,10 @@ class TestCometdClient(TestCase):
 
     def test_set_state_on_error(self):
         self.client._state_signals[ClientState.DISCONNECTED] = mock.MagicMock()
-        self.client.state = ClientState.DISCONNECTED
+        self.client._state = ClientState.DISCONNECTED
         self.client.state_changed = mock.MagicMock()
 
-        self.client._set_state(ClientState.ERROR)
+        self.client.state = ClientState.ERROR
 
         self.client.state_changed.emit.assert_called_with(ClientState.ERROR)
 
