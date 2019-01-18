@@ -29,7 +29,7 @@ class TestCometdClient(TestCase):
     def test_connect(self, run_coro):
         self.client._connect = mock.MagicMock()
 
-        self.client.connect()
+        self.client.connect_()
 
         run_coro.assert_called_with(self.client._connect.return_value,
                                     self.client._on_connect_done,
@@ -40,7 +40,7 @@ class TestCometdClient(TestCase):
         self.client.state = ClientState.CONNECTED
         self.client._connect = mock.MagicMock()
 
-        self.client.connect()
+        self.client.connect_()
 
         run_coro.assert_not_called()
 
@@ -48,7 +48,7 @@ class TestCometdClient(TestCase):
         self.client._connect_task = mock.MagicMock()
         self.client.state = ClientState.CONNECTED
 
-        self.client.disconnect()
+        self.client.disconnect_()
 
         self.client._connect_task.cancel.assert_called()
 
@@ -56,7 +56,7 @@ class TestCometdClient(TestCase):
         self.client._connect_task = mock.MagicMock()
         self.client.state = ClientState.DISCONNECTED
 
-        self.client.disconnect()
+        self.client.disconnect_()
 
         self.client._connect_task.cancel.assert_not_called()
 
@@ -64,7 +64,7 @@ class TestCometdClient(TestCase):
         self.client._connect_task = mock.MagicMock()
         self.client.state = ClientState.ERROR
 
-        self.client.disconnect()
+        self.client.disconnect_()
 
         self.client._connect_task.cancel.assert_not_called()
 
@@ -74,7 +74,7 @@ class TestCometdClient(TestCase):
 
         with self.assertRaisesRegex(InvalidStateError,
                                     "Uninitialized _connect_task attribute."):
-            self.client.disconnect()
+            self.client.disconnect_()
 
     @mock.patch("aiocometd_chat_demo.cometd.aiocometd.Client")
     async def test__connect(self, client_cls):

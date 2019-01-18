@@ -100,8 +100,8 @@ class CometdClient(QObject):  # type: ignore
         }
         self._connect_task: Optional["futures.Future[None]"] = None
 
-    def connect(self) -> None:
-        """Connect to the CometD service
+    def connect_(self) -> None:
+        """Connect to the CometD service and start listening for messages
 
         The function returns immediately. On success the
         :obj:`~CometdClient.connected` signal is emited or the
@@ -161,7 +161,7 @@ class CometdClient(QObject):  # type: ignore
             self._set_state(ClientState.ERROR)
             self.error.emit(error)
 
-    def disconnect(self) -> None:
+    def disconnect_(self) -> None:
         """Disconnect from the CometD service
 
         If the client is not connected it does nothing.
