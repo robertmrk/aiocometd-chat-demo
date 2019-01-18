@@ -1,9 +1,9 @@
-from asynctest import TestCase, mock
 import concurrent.futures
+
+from asynctest import TestCase, mock
 
 from aiocometd_chat_demo.cometd import CometdClient, ClientState, \
     MessageResponse, run_coro
-
 from aiocometd_chat_demo.exceptions import InvalidStateError
 
 
