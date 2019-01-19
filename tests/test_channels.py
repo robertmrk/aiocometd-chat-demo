@@ -212,8 +212,8 @@ class TestChannelsModel(TestCase):
 
 
 class TestChannelsModelData(TestCase):
-    channel1 = ChannelItem(name="one", type=ChannelType.USER, changed=False)
-    channel2 = ChannelItem(name="two", type=ChannelType.USER, changed=True)
+    channel1 = ChannelItem(name="one", type=ChannelType.USER)
+    channel2 = ChannelItem(name="two", type=ChannelType.USER)
     group_channel_name = "group"
 
     def setUp(self):
@@ -227,15 +227,12 @@ class TestChannelsModelData(TestCase):
                 self.model.group_channel.conversation),
             (0, 0, ChannelItemRole.CHANNEL_TYPE,
                 self.model.group_channel.type),
-            (0, 0, ChannelItemRole.CHANGED, self.model.group_channel.changed),
             (1, 0, ChannelItemRole.NAME, self.channel1.name),
             (1, 0, ChannelItemRole.CONVERSATION, self.channel1.conversation),
             (1, 0, ChannelItemRole.CHANNEL_TYPE, self.channel1.type),
-            (1, 0, ChannelItemRole.CHANGED, self.channel1.changed),
             (2, 0, ChannelItemRole.NAME, self.channel2.name),
             (2, 0, ChannelItemRole.CONVERSATION, self.channel2.conversation),
-            (2, 0, ChannelItemRole.CHANNEL_TYPE, self.channel2.type),
-            (2, 0, ChannelItemRole.CHANGED, self.channel2.changed)
+            (2, 0, ChannelItemRole.CHANNEL_TYPE, self.channel2.type)
         )
 
         for row, column, role, expected in cases:
@@ -249,11 +246,9 @@ class TestChannelsModelData(TestCase):
             (-1, 0, ChannelItemRole.NAME, None),
             (-1, 0, ChannelItemRole.CONVERSATION, None),
             (-1, 0, ChannelItemRole.CHANNEL_TYPE, None),
-            (-1, 0, ChannelItemRole.CHANGED, None),
             (3, 0, ChannelItemRole.NAME, None),
             (3, 0, ChannelItemRole.CONVERSATION, None),
-            (3, 0, ChannelItemRole.CHANNEL_TYPE, None),
-            (3, 0, ChannelItemRole.CHANGED, None)
+            (3, 0, ChannelItemRole.CHANNEL_TYPE, None)
         )
 
         for row, column, role, expected in cases:

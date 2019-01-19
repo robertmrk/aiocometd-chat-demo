@@ -35,8 +35,6 @@ class ChannelItem:
     type: ChannelType
     #: The conversation model containing the messages on the channel
     conversation: ConversationModel = field(init=False)
-    #: Marks whether the channel has any unread messages
-    changed: bool = field(default=False)
 
     def __post_init__(self) -> None:
         self.conversation = ConversationModel(self.name)
@@ -52,11 +50,8 @@ class ChannelItemRole(IntEnum):
     NAME = Qt.UserRole
     #: Conversation model role
     CONVERSATION = Qt.UserRole + 1
-    #: Role for getting information on whether the channel has any unread
-    # messages
-    CHANGED = Qt.UserRole + 2
     #: Channel type role
-    CHANNEL_TYPE = Qt.UserRole + 3
+    CHANNEL_TYPE = Qt.UserRole + 2
 
 
 @dataclass()
@@ -77,7 +72,6 @@ class ChannelsModel(QAbstractListModel):  # type: ignore
     _role_names: ClassVar[Dict[int, QByteArray]] = {
         ChannelItemRole.NAME: QByteArray(b"name"),
         ChannelItemRole.CONVERSATION: QByteArray(b"conversation"),
-        ChannelItemRole.CHANGED: QByteArray(b"changed"),
         ChannelItemRole.CHANNEL_TYPE: QByteArray(b"type")
     }
     #: Sending of a message was requested to the specified
@@ -146,8 +140,6 @@ class ChannelsModel(QAbstractListModel):  # type: ignore
                 return channel.name
             if role == ChannelItemRole.CONVERSATION:
                 return channel.conversation
-            if role == ChannelItemRole.CHANGED:
-                return channel.changed
             if role == ChannelItemRole.CHANNEL_TYPE:
                 return channel.type.value
         return None
