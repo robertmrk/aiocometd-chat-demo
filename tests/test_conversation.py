@@ -92,7 +92,7 @@ class TestConversationModelData(TestCase):
                 index = self.model.createIndex(row, column)
                 self.assertEqual(self.model.data(index, role), expected)
 
-    def test_data_return_none_for_unhandled_index(self):
+    def test_data_return_none_for_unhandled_role(self):
         cases = (
             (0, 0, Qt.DisplayRole, None),
             (0, 0, Qt.DisplayRole, None),
