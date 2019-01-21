@@ -111,3 +111,6 @@ venv.bak/
 
 # coverage
 .coveragerc
+
+# QML compiled files
+*.qmlc
