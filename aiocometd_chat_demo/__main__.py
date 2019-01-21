@@ -24,7 +24,7 @@ MAIN_QML_FILE = "main.qml"
 #: Directory path of file
 HERE = os.path.dirname(os.path.abspath(__file__))
 #: Path of the main QML file
-MAIN_QML_PATH = os.path.join(HERE, "qml")
+MAIN_QML_PATH = os.path.join(HERE, "qml", MAIN_QML_FILE)
 #: QML application control style
 QUICK_CONTROLS2_STYLE = "imagine"
 
