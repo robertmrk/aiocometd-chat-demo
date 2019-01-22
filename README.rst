@@ -56,6 +56,10 @@ then activate the virtual environment and run the application::
     $ pipenv shell
     $ python -m aiocometd_chat_demo
 
+To use the application, you should connect to an insance of CometD's demo
+chat servcie. You can run it locally by creating a container from the
+cometd-demos_ docker image.
+
 .. _aiocometd_chat_demo: https://github.com/robertmrk/aiocometd-chat-demo
 .. _CometD: https://cometd.org/
 .. _aiocometd: https://github.com/robertmrk/aiocometd
@@ -64,3 +68,4 @@ then activate the virtual environment and run the application::
 .. _quamash: https://github.com/harvimt/quamash
 .. _releases: https://github.com/robertmrk/aiocometd-chat-demo/releases
 .. _pipenv: https://docs.pipenv.org/
+.. _cometd-demos: https://hub.docker.com/r/robertmrk/cometd-demos
