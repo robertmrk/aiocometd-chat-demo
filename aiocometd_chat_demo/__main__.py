@@ -17,6 +17,7 @@ from PyQt5.QtQml import (  # type: ignore
 from aiocometd_chat_demo.chat_service import ChatService
 from aiocometd_chat_demo.channels import ChannelsModel
 from aiocometd_chat_demo.conversation import ConversationModel
+from aiocometd_chat_demo._metadata import AUTHOR, AUTHOR_EMAIL, VERSION, URL
 
 
 #: Name of the main QML file
@@ -56,6 +57,11 @@ def main() -> None:
 
     # create the QML engine
     engine = QQmlApplicationEngine()
+    # set context properties
+    engine.rootContext().setContextProperty("version", VERSION)
+    engine.rootContext().setContextProperty("author", AUTHOR)
+    engine.rootContext().setContextProperty("authorEmail", AUTHOR_EMAIL)
+    engine.rootContext().setContextProperty("projectUrl", URL)
     # load the main QML file
     engine.load(MAIN_QML_PATH)
 

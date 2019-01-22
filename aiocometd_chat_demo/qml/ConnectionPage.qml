@@ -39,7 +39,8 @@ Pane {
             Layout.alignment: Qt.AlignHCenter
             Layout.fillWidth: true
 
-            text: qsTr("aiocometd_chat_demo is a client application for the CometD \
+            text: qsTr("<a href='" + projectUrl + "'>aiocometd_chat_demo</a> \
+             is a client application for the CometD \
              chat service demo. \
              It demonstrates the usage of \
              <a href='https://github.com/robertmrk/aiocometd'>aiocometd</a> \
@@ -130,6 +131,15 @@ Pane {
             text: qsTr("Connect")
             enabled: url.length && username.length && root.connectionEnabled
             onClicked: root.connect()
+        }
+
+        Label {
+            Layout.alignment: Qt.AlignHCenter
+            text: "author: <a href='mailto:" + authorEmail + "'>" +
+                author + "</a>, version: " + version
+            font.pointSize: 8
+            opacity: 0.7
+            onLinkActivated: Qt.openUrlExternally(link)
         }
     }
 }

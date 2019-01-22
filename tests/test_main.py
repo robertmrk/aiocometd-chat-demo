@@ -4,6 +4,7 @@ import aiocometd_chat_demo.__main__ as main
 from aiocometd_chat_demo.chat_service import ChatService
 from aiocometd_chat_demo.channels import ChannelsModel
 from aiocometd_chat_demo.conversation import ConversationModel
+from aiocometd_chat_demo._metadata import VERSION, AUTHOR, AUTHOR_EMAIL, URL
 
 
 class TestMain(TestCase):
@@ -40,6 +41,7 @@ class TestMain(TestCase):
         event_loop = mock.MagicMock()
         event_loop_cls.return_value = event_loop
         engine = engine_cls.return_value
+        root_context = engine.rootContext.return_value
 
         main.main()
 
@@ -49,6 +51,12 @@ class TestMain(TestCase):
         asyncio_mod.set_event_loop.assert_called_with(event_loop)
         register_types_func.assert_called()
         engine_cls.assert_called()
+        root_context.setContextProperty.assert_has_calls([
+            mock.call("version", VERSION),
+            mock.call("author", AUTHOR),
+            mock.call("authorEmail", AUTHOR_EMAIL),
+            mock.call("projectUrl", URL),
+        ], any_order=True)
         engine.load.assert_called_with(main.MAIN_QML_PATH)
         event_loop.__enter__.assert_called()
         event_loop.__exit__.assert_called()
